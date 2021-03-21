@@ -46,6 +46,7 @@ const {
   updateProfile,
   deleteProfile,
   getProfilePartner,
+  getProfileUser,
 } = require("../controllers/profile");
 
 router.get("/profiles", getProfiles);
@@ -53,11 +54,25 @@ router.get("/profile/:id", getDetailProfile);
 router.patch("/profile/:id", updateProfile);
 router.delete("/profile/:id", deleteProfile);
 router.get("/profile-partners", getProfilePartner);
+router.get("/profile-users", getProfileUser);
 
 //-------------------------------TEST PRODUCT START-------------------------------
-const { addProduct } = require("../controllers/products");
+const {
+  addProduct,
+  getProducts,
+  getProductById,
+  getProductsByPartner,
+  editProduct,
+  deletProduct,
+} = require("../controllers/products");
 
 router.post("/add-product", addProduct);
+router.get("/products", getProducts);
+router.get("/product/:id", getProductById);
+router.patch("/product/:id", editProduct);
+router.delete("/product/:id", deletProduct);
+router.get("/products/:id", getProductsByPartner);
+
 //-------------------------------TEST END---------------------------------
 
 module.exports = router;

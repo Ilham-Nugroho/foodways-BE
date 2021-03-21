@@ -36,7 +36,7 @@ exports.registerProfile = async (req, res) => {
     if (checkEmail)
       return res.status(400).send({
         status: "Register failed",
-        message: "Email already registered",
+        message: "Email already exist",
       });
 
     const hashStrength = 10;
@@ -47,7 +47,7 @@ exports.registerProfile = async (req, res) => {
       password: hashedPassword,
     });
 
-    const secretKey = "akda4860@a9d1";
+    const secretKey = "thisissecretkey";
     const token = jwt.sign(
       {
         id: profile.id,
@@ -114,7 +114,7 @@ exports.login = async (req, res) => {
       });
     }
 
-    const secretKey = "akda4860@a9d1";
+    const secretKey = "thisissecretkey";
     const token = jwt.sign(
       {
         id: checkEmail.id,

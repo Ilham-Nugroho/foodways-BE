@@ -33,7 +33,7 @@ exports.getProfilePartner = async (req, res) => {
           model: Products,
           as: "products",
           attributes: {
-            exclude: ["createdAt", "updatedAt"],
+            exclude: ["createdAt", "updatedAt", "ProfileId", "profileId"],
           },
         },
       ],
@@ -58,51 +58,32 @@ exports.getProfilePartner = async (req, res) => {
   }
 };
 
-//------------------------------------------------TEST END-----------------------------------
+exports.getProfileUser = async (req, res) => {
+  try {
+    const profiles = await Profile.findAll({
+      where: {
+        role: "USER",
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt"],
+      },
+    });
 
-// exports.addProduct = async (req, res) => {
-//   try {
-//     const { body } = req;
-//     const { menuName, menuPrice, menuDesc } = body;
-//     const schema = Joi.object({
-//       menuName: Joi.string().max(30).required(),
-//       menuDesc: Joi.string().max(40).required(),
-//       menuPrice: Joi.string()
-//         .pattern(/^[0-9]+$/, "numbers")
-//         .max(7)
-//         .required(),
-//     });
-//     const { error } = schema.validate({ menuName, menuDesc, menuPrice });
-
-//     if (error)
-//       return res.status(400).send({
-//         status: "validation failed",
-//         message: error.details[0].message,
-//       });
-
-//     const input = {
-//       menuName,
-//       menuDesc,
-//       menuPrice,
-//     };
-
-//     const product = await Products.create(input);
-
-//     res.send({
-//       status: "success",
-//       message: "ADD Product Successfull",
-//       data: {
-//         product,
-//       },
-//     });
-//   } catch (err) {
-//     console.log(err);
-//     res.status(500).send({
-//       status: "error",
-//       message: "Server Error",
-//     });
-//   }
-// };
+    res.send({
+      status: "success",
+      message: "GET ALL USER Successfull",
+      data: {
+        profiles,
+      },
+    });
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({
+      status: "error",
+      message: "Server Error",
+    });
+  }
+};
 
 exports.getDetailProfile = async (req, res) => {
   try {
@@ -232,6 +213,18 @@ exports.updateProfile = async (req, res) => {
 exports.deleteProfile = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const checkId = await Profile.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!checkId)
+      return res.send({
+        status: "Not Found",
+        message: `Profile with id: ${id} not found`,
+      });
 
     await Profile.destroy({
       where: {
