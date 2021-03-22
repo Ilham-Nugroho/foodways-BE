@@ -48,7 +48,14 @@ exports.getProductsByPartner = async (req, res) => {
         },
       },
       attributes: {
-        exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
+        exclude: [
+          "createdAt",
+          "updatedAt",
+          "profileId",
+          "ProfileId",
+          "password",
+          "avatar",
+        ],
       },
     });
 
@@ -107,7 +114,7 @@ exports.getProductById = async (req, res) => {
 exports.addProduct = async (req, res) => {
   try {
     const { body } = req;
-    const { menuName, menuPrice, menuDesc, ProfileId } = body;
+    const { menuName, menuPrice, menuDesc, ProfileId, menuImg } = body;
     const schema = Joi.object({
       menuName: Joi.string().max(30).required(),
       menuDesc: Joi.string().max(40).required(),
@@ -116,12 +123,14 @@ exports.addProduct = async (req, res) => {
         .max(7)
         .required(),
       ProfileId: Joi.string(),
+      menuImg: Joi.string(),
     });
     const { error } = schema.validate({
       menuName,
       menuDesc,
       menuPrice,
       ProfileId,
+      menuImg,
     });
 
     if (error) {
@@ -131,14 +140,13 @@ exports.addProduct = async (req, res) => {
       });
     }
 
-    const input = {
+    const createdProduct = await Products.create({
       menuName,
       menuDesc,
       menuPrice,
-      ProfileId,
-    };
-
-    const createdProduct = await Products.create(input);
+      ProfileId: req.profileId.id,
+      menuImg: req.files.imageFile[0].filename,
+    });
 
     const product = await Products.findOne({
       where: {
@@ -148,7 +156,7 @@ exports.addProduct = async (req, res) => {
         model: Profile,
         as: "profile",
         attributes: {
-          exclude: ["createdAt", "updatedAt"],
+          exclude: ["createdAt", "updatedAt", "password", "avatar", "location"],
         },
       },
       attributes: {
@@ -172,18 +180,29 @@ exports.addProduct = async (req, res) => {
   }
 };
 
-exports.editProduct = async (req, res) => {
+exports.updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    const { body } = req;
 
-    const checkId = await Products.findOne({
+    const checkProduct = await Products.findOne({
       where: {
-        id,
+        id: id,
       },
     });
 
-    if (!checkId)
+    const profile = await Profile.findOne({
+      where: {
+        id: req.profileId.id,
+      },
+    });
+
+    if (checkProduct && profile.id !== checkProduct.profileId)
+      return res.status(400).send({
+        status: "Error",
+        message: "You're not authorized to access",
+      });
+
+    if (!checkProduct)
       return res.send({
         status: "Not Found",
         message: `Product with id: ${id} not found`,
@@ -192,21 +211,34 @@ exports.editProduct = async (req, res) => {
         },
       });
 
-    const updatedProductId = await Products.update(body, {
+    let updateImage;
+
+    if (req.files.imageFile === undefined) {
+      updateImage = checkProduct.menuImg;
+    } else {
+      updateImage = req.files.imageFile[0].filename;
+    }
+
+    const update = {
+      ...req.body,
+      menuImg: updateImage,
+    };
+
+    const updatedProduct = await Products.update(update, {
       where: {
-        id,
+        id: id,
       },
     });
 
     const product = await Products.findOne({
       where: {
-        id: updatedProductId,
+        id: id,
       },
       include: {
         model: Profile,
         as: "profile",
         attributes: {
-          exclude: ["createdAt", "updatedAt"],
+          exclude: ["createdAt", "updatedAt", "avatar", "location", "password"],
         },
       },
       attributes: {
@@ -233,6 +265,19 @@ exports.editProduct = async (req, res) => {
 exports.deletProduct = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const checkId = await Products.findOne({
+      where: {
+        id,
+      },
+    });
+
+    if (!checkId)
+      return res.send({
+        status: "Not Found",
+        message: `Product with id: ${id} not found`,
+      });
+
     await Products.destroy({
       where: {
         id,

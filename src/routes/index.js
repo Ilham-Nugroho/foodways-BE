@@ -2,7 +2,11 @@ const express = require("express");
 
 const router = express.Router();
 
-//-----------USER-----------------------------------------------
+const { authenticated } = require("../middlewares/auth");
+const { uploadFile } = require("../middlewares/upload");
+const { partnerCheck, userCheck } = require("../middlewares/roleCheck");
+
+//------------------------------REGISTER LOGIN-----------------------------------------------
 // const {
 //   getUsers,
 //   getDetailUser,
@@ -39,7 +43,7 @@ const { registerProfile, login } = require("../controllers/auth");
 router.post("/register", registerProfile);
 router.post("/login", login);
 
-//-----------Profile--------------------------------------------
+//----------------------------------Profile--------------------------------------------
 const {
   getProfiles,
   getDetailProfile,
@@ -50,29 +54,49 @@ const {
 } = require("../controllers/profile");
 
 router.get("/profiles", getProfiles);
-router.get("/profile/:id", getDetailProfile);
-router.patch("/profile/:id", updateProfile);
-router.delete("/profile/:id", deleteProfile);
+router.get("/profile/:id", authenticated, getDetailProfile);
+router.patch(
+  "/profile/:id",
+  authenticated,
+  uploadFile("imageFile", "videoFile"),
+  updateProfile
+);
+router.delete("/profile/:id", authenticated, deleteProfile);
 router.get("/profile-partners", getProfilePartner);
 router.get("/profile-users", getProfileUser);
 
-//-------------------------------TEST PRODUCT START-------------------------------
+//-------------------------------PRODUCT-------------------------------
 const {
   addProduct,
   getProducts,
   getProductById,
   getProductsByPartner,
-  editProduct,
+  updateProduct,
   deletProduct,
 } = require("../controllers/products");
 
-router.post("/add-product", addProduct);
+router.post(
+  "/add-product",
+  authenticated,
+  partnerCheck,
+  uploadFile("imageFile", "videoFile"),
+  addProduct
+);
 router.get("/products", getProducts);
-router.get("/product/:id", getProductById);
-router.patch("/product/:id", editProduct);
-router.delete("/product/:id", deletProduct);
+router.get("/product/:id", authenticated, getProductById);
+router.patch(
+  "/product/:id",
+  authenticated,
+  partnerCheck,
+  uploadFile("imageFile", "videoFile"),
+  updateProduct
+);
+router.delete("/product/:id", authenticated, partnerCheck, deletProduct);
 router.get("/products/:id", getProductsByPartner);
 
-//-------------------------------TEST END---------------------------------
+//-------------------------------TEST TRANSACTION START---------------------------------
+
+// buat table order (pembanti) ada qty transactionId prodductId --> direlasikan ke product
+// transaction has many order
 
 module.exports = router;

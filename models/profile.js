@@ -11,7 +11,6 @@ module.exports = (sequelize, DataTypes) => {
       Profile.hasMany(models.Products, {
         as: "products",
       });
-      // define association here
     }
   }
   Profile.init(
@@ -21,6 +20,8 @@ module.exports = (sequelize, DataTypes) => {
       name: DataTypes.STRING,
       phone: DataTypes.STRING,
       role: DataTypes.STRING,
+      avatar: DataTypes.STRING,
+      location: DataTypes.STRING,
     },
     {
       sequelize,

@@ -11,8 +11,9 @@ module.exports = (sequelize, DataTypes) => {
       Products.belongsTo(models.Profile, {
         as: "profile",
       });
-
-      // define association here
+      // Products.belongsTo(models.Transactions, {
+      //   as: "transactions",
+      // });
     }
   }
   Products.init(
@@ -20,6 +21,7 @@ module.exports = (sequelize, DataTypes) => {
       menuName: DataTypes.STRING,
       menuPrice: DataTypes.STRING,
       menuDesc: DataTypes.STRING,
+      menuImg: DataTypes.STRING,
     },
     {
       sequelize,

@@ -17,13 +17,15 @@ exports.registerProfile = async (req, res) => {
         .min(10)
         .max(13)
         .required(),
+      location: Joi.string(),
+      avatar: Joi.string(),
     });
 
     const { error } = schema.validate(req.body);
 
     if (error)
       return res.status(400).send({
-        status: "validation failed",
+        status: "Authentication Failed",
         message: error.details[0].message,
       });
 
@@ -45,6 +47,8 @@ exports.registerProfile = async (req, res) => {
     const profile = await Profile.create({
       ...req.body,
       password: hashedPassword,
+      location: "",
+      avatar: "",
     });
 
     const secretKey = "thisissecretkey";
@@ -62,8 +66,9 @@ exports.registerProfile = async (req, res) => {
         profile: {
           name: profile.name,
           email: profile.email,
-          token,
           role: profile.role,
+          phone: profile.phone,
+          token,
         },
       },
     });
@@ -89,7 +94,7 @@ exports.login = async (req, res) => {
 
     if (error)
       return res.status(400).send({
-        status: "validation failed",
+        status: "Authentication Failed",
         message: error.details[0].message,
       });
 
@@ -127,8 +132,13 @@ exports.login = async (req, res) => {
       message: "Login Success",
       data: {
         profile: {
+          id: checkEmail.id,
           name: checkEmail.name,
           email: checkEmail.email,
+          phone: checkEmail.phone,
+          role: checkEmail.role,
+          avatar: checkEmail.avatar,
+
           token,
         },
       },

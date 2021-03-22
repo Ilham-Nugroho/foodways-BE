@@ -3,7 +3,11 @@ const Joi = require("joi");
 
 exports.getProfiles = async (req, res) => {
   try {
-    const profiles = await Profile.findAll();
+    const profiles = await Profile.findAll({
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "password", "avatar", "location"],
+      },
+    });
 
     res.send({
       status: "success",
@@ -21,7 +25,6 @@ exports.getProfiles = async (req, res) => {
   }
 };
 
-//---------------------------------------TEST START-----------------------------------
 exports.getProfilePartner = async (req, res) => {
   try {
     const profiles = await Profile.findAll({
@@ -65,7 +68,7 @@ exports.getProfileUser = async (req, res) => {
         role: "USER",
       },
       attributes: {
-        exclude: ["createdAt", "updatedAt"],
+        exclude: ["createdAt", "updatedAt", "password", "avatar"],
       },
     });
 
@@ -111,86 +114,53 @@ exports.getDetailProfile = async (req, res) => {
   }
 };
 
-exports.addProfile = async (req, res) => {
-  try {
-    const { body } = req;
-
-    const { email, password, name, phone, role } = body;
-
-    const schema = Joi.object({
-      email: Joi.string().email().min(10).max(30).required(),
-      password: Joi.string().token().min(6).max(40).required(),
-      name: Joi.string().min(3).max(40).required(),
-      role: Joi.string().min(4).max(7).required(),
-      phone: Joi.string()
-        .pattern(/^[0-9]+$/, "numbers")
-        .min(10)
-        .max(13)
-        .required(),
-    });
-
-    const { error } = schema.validate(body);
-    if (error)
-      return res.status(400).send({
-        status: "validation failed",
-        message: error.details[0].message,
-      });
-
-    const input = {
-      email,
-      password,
-      name,
-      phone,
-      role,
-    };
-
-    const profile = await Profile.create(input);
-
-    res.send({
-      status: "success",
-      message: "ADD Profile Successfull",
-      data: {
-        profile,
-      },
-    });
-  } catch (err) {
-    console.log(err);
-    res.status(500).send({
-      status: "error",
-      message: "Server Error",
-    });
-  }
-};
-
 exports.updateProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { body } = req;
 
-    const checkId = await Profile.findOne({
+    const checkProfile = await Profile.findOne({
       where: {
-        id,
+        id: id,
       },
     });
 
-    if (!checkId)
+    if (!checkProfile)
       return res.send({
         status: "Not Found",
         message: `Profile with id: ${id} not found`,
-        data: {
-          profile,
-        },
       });
 
-    const updatedProfileId = await Profile.update(body, {
+    if (checkProfile.id !== req.profileId.id)
+      return res.status(400).send({
+        status: "Error",
+        message: "You're not authorized to access",
+      });
+
+    let updateImage;
+
+    if (req.files.imageFile === undefined) {
+      updateImage = checkProfile.avatar;
+    } else {
+      updateImage = req.files.imageFile[0].filename;
+    }
+
+    const update = {
+      ...req.body,
+      avatar: updateImage,
+    };
+
+    const updatedProfile = await Profile.update(update, {
       where: {
-        id,
+        id: id,
       },
     });
 
-    const profile = await Profile.findOne({
+    const profileNew = await Profile.findOne({
       where: {
-        id: updatedProfileId,
+        id: id,
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "location", "password"],
       },
     });
 
@@ -198,7 +168,7 @@ exports.updateProfile = async (req, res) => {
       status: "success",
       message: "UPDATE Profile Successfull",
       data: {
-        profile,
+        profileNew,
       },
     });
   } catch (err) {
@@ -214,16 +184,22 @@ exports.deleteProfile = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const checkId = await Profile.findOne({
+    const checkProfile = await Profile.findOne({
       where: {
-        id,
+        id: id,
       },
     });
 
-    if (!checkId)
+    if (!checkProfile)
       return res.send({
         status: "Not Found",
         message: `Profile with id: ${id} not found`,
+      });
+
+    if (checkProfile.id !== req.profileId.id)
+      return res.status(400).send({
+        status: "Error",
+        message: "You're not authorized to access",
       });
 
     await Profile.destroy({
