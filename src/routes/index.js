@@ -95,6 +95,12 @@ router.delete("/product/:id", authenticated, partnerCheck, deletProduct);
 router.get("/products/:id", getProductsByPartner);
 
 //-------------------------------TEST TRANSACTION START---------------------------------
+const {
+  addTransaction,
+  getTransactionById,
+} = require("../controllers/transactions");
+router.post("/transaction", authenticated, addTransaction);
+router.get("/transaction/:id", authenticated, getTransactionById);
 
 // buat table order (pembanti) ada qty transactionId prodductId --> direlasikan ke product
 // transaction has many order

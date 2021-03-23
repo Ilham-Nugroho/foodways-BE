@@ -9,7 +9,16 @@ module.exports = (sequelize, DataTypes) => {
      */
     static associate(models) {
       Profile.hasMany(models.Products, {
+        // foreignKey: "productsId",
         as: "products",
+      });
+      Profile.hasMany(models.Transactions, {
+        foreignKey: "customerId",
+        // as: "transactions",
+      });
+      Profile.hasMany(models.Transactions, {
+        foreignKey: "partnerId",
+        // as: "transactions",
       });
     }
   }
