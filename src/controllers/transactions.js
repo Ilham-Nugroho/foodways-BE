@@ -4,8 +4,20 @@ const { Op } = require("sequelize");
 const { Transactions, Products, Order, Profile } = require("../../models");
 const { getProducts } = require("./products");
 
-exports.getOrderByPartnerId = async (req, res) => {
+exports.getPartnerTransactions = async (req, res) => {
   try {
+    const exclude = [
+      "password",
+      "Order",
+      "order",
+      "createdAt",
+      "updatedAt",
+      "profileId",
+      "ProfileId",
+      "transactionsId",
+      "productsId",
+    ];
+
     const { params } = req;
     const { id } = params;
 
@@ -14,23 +26,29 @@ exports.getOrderByPartnerId = async (req, res) => {
         {
           model: Products,
           as: "products",
+          attributes: {
+            exclude: exclude,
+          },
           through: {
             model: Order,
             as: "order",
+            attributes: {
+              exclude: exclude,
+            },
           },
         },
         {
           model: Profile,
           as: "customer",
           attributes: {
-            exclude: ["password", "createdAt", "updatedAt", "location"],
+            exclude: exclude,
           },
         },
         {
           model: Profile,
           as: "partner",
           attributes: {
-            exclude: ["password", "createdAt", "updatedAt", "location"],
+            exclude: exclude,
           },
         },
       ],
@@ -53,37 +71,48 @@ exports.getOrderByPartnerId = async (req, res) => {
   }
 };
 
-exports.getOrderByCustomerId = async (req, res) => {
+exports.getCustomerTransactions = async (req, res) => {
   try {
-    const { user } = req;
-
-    const transactions = await Transaction.findAll({
+    const exclude = [
+      "password",
+      "Order",
+      "order",
+      "createdAt",
+      "updatedAt",
+      "profileId",
+      "ProfileId",
+      "transactionsId",
+      "productsId",
+    ];
+    const transactions = await Transactions.findAll({
       include: [
         {
-          model: Product,
+          model: Products,
           as: "products",
           through: {
-            model: OrderProduct,
-            as: "orderProduct",
+            model: Order,
+            as: "order",
+            attributes: {
+              exclude: exclude,
+            },
           },
-        },
-        {
-          model: User,
-          as: "customer",
           attributes: {
-            exclude: ["password"],
+            exclude: exclude,
           },
         },
         {
-          model: User,
+          model: Profile,
           as: "partner",
           attributes: {
-            exclude: ["password"],
+            exclude: exclude,
           },
         },
       ],
       where: {
-        customerId: parseInt(user.id),
+        customerId: parseInt(req.profileId.id),
+      },
+      attributes: {
+        exclude: exclude,
       },
     });
 
@@ -106,33 +135,55 @@ exports.getTransactionById = async (req, res) => {
     const { params } = req;
     const { id } = params;
 
+    const exclude = [
+      "password",
+      "Order",
+      "order",
+      "createdAt",
+      "updatedAt",
+      "profileId",
+      "ProfileId",
+      "transactionsId",
+      "productsId",
+      "avatar",
+    ];
+
     const transactions = await Transactions.findAll({
       include: [
         {
           model: Products,
           as: "products",
+          attributes: {
+            exclude: exclude,
+          },
           through: {
             model: Order,
             as: "order",
+            attributes: {
+              exclude: exclude,
+            },
           },
         },
         {
           model: Profile,
           as: "customer",
           attributes: {
-            exclude: ["password"],
+            exclude: exclude,
           },
         },
         {
           model: Profile,
           as: "partner",
           attributes: {
-            exclude: ["password"],
+            exclude: exclude,
           },
         },
       ],
       where: {
         id: parseInt(id),
+      },
+      attributes: {
+        exclude: exclude,
       },
     });
 
@@ -224,9 +275,22 @@ exports.addTransaction = async (req, res) => {
     await Order.bulkCreate(bulk);
 
     // Get user who order.
+    const exclude = [
+      "Order",
+      "order",
+      "createdAt",
+      "updatedAt",
+      "profileId",
+      "ProfileId",
+      "transactionsId",
+      "productsId",
+      "password",
+      "avatar",
+    ];
+
     const customer = await Profile.findOne({
       attributes: {
-        exclude: ["password", "createdAt", "updatedAt", "avatar"],
+        exclude: exclude,
       },
       where: {
         id: parseInt(req.profileId.id),
@@ -237,38 +301,22 @@ exports.addTransaction = async (req, res) => {
       include: {
         model: Products,
         as: "products",
+        attributes: {
+          exclude: exclude,
+        },
         through: {
           model: Order,
           as: "order",
           attributes: {
-            exclude: [
-              "Order",
-              // "order",
-              "createdAt",
-              "updatedAt",
-              "profileId",
-              "ProfileId",
-              "transactionsId",
-              "productsId",
-            ],
+            exclude: exclude,
           },
-        },
-        attributes: {
-          exclude: [
-            "Order",
-            "order",
-            "createdAt",
-            "updatedAt",
-            "profileId",
-            "ProfileId",
-          ],
         },
       },
       where: {
         id: transaction.id,
       },
       attributes: {
-        exclude: ["createdAt", "updatedAt", "order", "Order"],
+        exclude: exclude,
       },
     });
 

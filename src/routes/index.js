@@ -98,9 +98,23 @@ router.get("/products/:id", getProductsByPartner);
 const {
   addTransaction,
   getTransactionById,
+  getCustomerTransactions,
+  getPartnerTransactions,
 } = require("../controllers/transactions");
 router.post("/transaction", authenticated, addTransaction);
 router.get("/transaction/:id", authenticated, getTransactionById);
+router.get(
+  "/my-transaction",
+  authenticated,
+  userCheck,
+  getCustomerTransactions
+);
+router.get(
+  "/transactions/:id",
+  authenticated,
+  partnerCheck,
+  getPartnerTransactions
+);
 
 // buat table order (pembanti) ada qty transactionId prodductId --> direlasikan ke product
 // transaction has many order
