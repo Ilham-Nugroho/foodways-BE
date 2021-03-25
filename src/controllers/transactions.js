@@ -2,10 +2,22 @@ const Joi = require("joi");
 const { Op } = require("sequelize");
 
 const { Transactions, Products, Order, Profile } = require("../../models");
-const { getProducts } = require("./products");
 
 exports.getPartnerTransactions = async (req, res) => {
   try {
+    const checkId = await Profile.findOne({
+      where: {
+        id: req.profileId.id,
+      },
+    });
+
+    if (parseInt(checkId.id) !== parseInt(req.params.id)) {
+      return res.status(400).send({
+        status: "ERROR",
+        message: "You're not authorized",
+      });
+    }
+
     const exclude = [
       "password",
       "Order",
@@ -16,12 +28,20 @@ exports.getPartnerTransactions = async (req, res) => {
       "ProfileId",
       "transactionsId",
       "productsId",
+      "customerId",
+      "partnerId",
     ];
 
     const { params } = req;
     const { id } = params;
 
     const transactions = await Transactions.findAll({
+      where: {
+        partnerId: parseInt(id),
+      },
+      attributes: {
+        exclude: exclude,
+      },
       include: [
         {
           model: Products,
@@ -44,17 +64,7 @@ exports.getPartnerTransactions = async (req, res) => {
             exclude: exclude,
           },
         },
-        {
-          model: Profile,
-          as: "partner",
-          attributes: {
-            exclude: exclude,
-          },
-        },
       ],
-      where: {
-        partnerId: parseInt(id),
-      },
     });
 
     res.send({
@@ -73,6 +83,19 @@ exports.getPartnerTransactions = async (req, res) => {
 
 exports.getCustomerTransactions = async (req, res) => {
   try {
+    const checkId = await Profile.findOne({
+      where: {
+        id: req.profileId.id,
+      },
+    });
+
+    if (parseInt(checkId.id) !== parseInt(req.params.id)) {
+      return res.status(400).send({
+        status: "ERROR",
+        message: "You're not authorized",
+      });
+    }
+
     const exclude = [
       "password",
       "Order",
@@ -130,10 +153,26 @@ exports.getCustomerTransactions = async (req, res) => {
   }
 };
 
-exports.getTransactionById = async (req, res) => {
+exports.getTransactionDetail = async (req, res) => {
   try {
     const { params } = req;
     const { id } = params;
+
+    const checkId = await Transactions.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    if (
+      checkId.customerId !== req.profileId.id &&
+      checkId.partnerId !== req.profileId.id
+    ) {
+      return res.status(400).send({
+        status: "ERROR",
+        message: "You're not authorized",
+      });
+    }
 
     const exclude = [
       "password",
@@ -146,6 +185,8 @@ exports.getTransactionById = async (req, res) => {
       "transactionsId",
       "productsId",
       "avatar",
+      "partnerId",
+      "customerId",
     ];
 
     const transactions = await Transactions.findAll({
@@ -188,15 +229,15 @@ exports.getTransactionById = async (req, res) => {
     });
 
     res.send({
-      status: "success",
+      status: "Success",
       data: {
         transactions,
       },
     });
   } catch (err) {
     return res.send({
-      status: "failed",
-      message: err,
+      status: "Error",
+      message: "Can't get transaction",
     });
   }
 };
@@ -239,8 +280,8 @@ exports.addTransaction = async (req, res) => {
 
     if (products.length < 1 || products.length !== body.products.length) {
       return res.send({
-        status: "invalid",
-        message: "Some from your product doesn't exist.",
+        status: "ERROR",
+        message: "Some of the product you order doesn't exist",
       });
     }
 
@@ -249,8 +290,8 @@ exports.addTransaction = async (req, res) => {
     for (let i = 1; i < products.length; i++) {
       if (partnerId !== products[i].profileId) {
         return res.send({
-          status: "invalid",
-          message: "Customer only can order the menu from a same place.",
+          status: "ERROR",
+          message: "Please keep your order from 1 restaurant only",
         });
       }
     }
@@ -322,7 +363,7 @@ exports.addTransaction = async (req, res) => {
 
     return res.send({
       status: "success",
-      message: "Your order is success.",
+      message: "Your order has been made",
       data: {
         transaction: {
           id: transaction.id,
@@ -333,91 +374,140 @@ exports.addTransaction = async (req, res) => {
       },
     });
   } catch (err) {
-    console.log(err);
     res.status(500).send({
-      status: "something wrong",
-      message: "Server Error",
+      status: "ERROR",
+      message: "Can't place order",
     });
   }
 };
 
-exports.updateOrder = async (req, res) => {
+exports.updateTransaction = async (req, res) => {
   try {
-    const { body, params } = req;
-    const { status } = body;
-    const { id } = params;
+    // const { body, params } = req;
+    // const { status } = body;
+    const { status } = req.body;
+    // const { id } = params;
 
     // Validate inputs.
     const schema = Joi.object({
-      status: Joi.string().min(1).max(255),
+      status: Joi.string().min(2).max(255),
     });
-    const { error } = schema.validate(body);
+    const { error } = schema.validate({ status });
 
     if (error) {
       return res.send({
         status: "invalid",
-        message: error.details.message[0],
+        message: error.details[0].message,
       });
     }
 
-    const transaction = await Transaction.update(
-      {
-        status,
+    const exclude = [
+      "Order",
+      "order",
+      "createdAt",
+      "updatedAt",
+      "profileId",
+      "ProfileId",
+      "transactionsId",
+      "productsId",
+      "password",
+      "avatar",
+      "customerId",
+      "partnerId",
+    ];
+
+    const update = {
+      ...req.body,
+      status: status,
+    };
+
+    const transactionUpdate = await Transactions.update(update, {
+      where: {
+        id: req.params.id,
       },
-      {
-        where: {
-          id: parseInt(id),
+    });
+
+    const transaction = await Transactions.findOne({
+      where: {
+        id: req.params.id,
+      },
+      attributes: {
+        exclude: exclude,
+      },
+      include: [
+        {
+          model: Profile,
+          as: "customer",
+          attributes: {
+            exclude: exclude,
+          },
         },
-      }
-    );
+        {
+          model: Products,
+          as: "products",
+          attributes: {
+            exclude: exclude,
+          },
+          through: {
+            model: Order,
+            as: "order",
+            attributes: {
+              exclude: exclude,
+            },
+          },
+        },
+      ],
+    });
 
     res.send({
       status: "success",
       message: "Your order has been updated.",
+      data: {
+        transaction: {
+          id: transaction.id,
+          userOrder: transaction.customer,
+          status: transaction.status,
+          order: transaction.products,
+        },
+      },
     });
   } catch (err) {
     return res.send({
-      status: "failed",
-      message: err,
+      status: "ERROR",
+      message: "Can't update order",
     });
   }
 };
 
-exports.deleteOrder = async (req, res) => {
+exports.deleteTransaction = async (req, res) => {
   try {
-    const { params, user } = req;
-    const { id } = params;
-
-    const transaction = await Transaction.findOne({
+    const transaction = await Transactions.findOne({
       where: {
-        id,
+        id: req.params.id,
       },
     });
 
-    if (transaction.partnerId !== parseInt(user.id)) {
+    if (transaction.partnerId !== parseInt(req.profileId.id)) {
       return res.send({
         status: "Access Denied",
-        message: "You don't have right to access.",
+        message: "You're not authorized",
       });
     }
 
-    await Transaction.destroy({
+    await Transactions.destroy({
       where: {
-        id: parseInt(id),
+        id: parseInt(req.profileId.id),
       },
     });
 
     res.send({
-      status: "success",
-      message: "Your order has been deleted.",
-      data: {
-        id,
-      },
+      status: "Success",
+      message: "Your transaction has been deleted.",
     });
   } catch (err) {
     return res.send({
-      status: "failed",
-      message: err,
+      status: "ERROR",
+      message: "Can't delete transaction",
     });
   }
 };

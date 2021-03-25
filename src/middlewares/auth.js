@@ -8,8 +8,8 @@ exports.authenticated = (req, res, next) => {
     !(token = header.replace("Bearer ", ""))
   ) {
     return res.status(400).send({
-      status: "failed",
-      message: "Access Denied",
+      status: "ERROR",
+      message: "Authentication failed",
     });
   }
 

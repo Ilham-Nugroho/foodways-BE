@@ -115,6 +115,7 @@ exports.addProduct = async (req, res) => {
   try {
     const { body } = req;
     const { menuName, menuPrice, menuDesc, ProfileId, menuImg } = body;
+
     const schema = Joi.object({
       menuName: Joi.string().max(30).required(),
       menuDesc: Joi.string().max(40).required(),
@@ -196,6 +197,7 @@ exports.updateProduct = async (req, res) => {
       },
     });
 
+    //checking wether  req.profileId.id (from token) === product's owner(partner) Id
     if (checkProduct && profile.id !== checkProduct.profileId)
       return res.status(400).send({
         status: "Error",
@@ -262,9 +264,27 @@ exports.updateProduct = async (req, res) => {
   }
 };
 
-exports.deletProduct = async (req, res) => {
+exports.deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
+
+    const checkProduct = await Products.findOne({
+      where: {
+        id: id,
+      },
+    });
+
+    const profile = await Profile.findOne({
+      where: {
+        id: req.profileId.id,
+      },
+    });
+    //checking wether  req.profileId.id (from token) === product's owner(partner) Id
+    if (checkProduct && profile.id !== checkProduct.profileId)
+      return res.status(400).send({
+        status: "Error",
+        message: "You're not authorized",
+      });
 
     const checkId = await Products.findOne({
       where: {

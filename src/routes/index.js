@@ -72,11 +72,11 @@ const {
   getProductById,
   getProductsByPartner,
   updateProduct,
-  deletProduct,
+  deleteProduct,
 } = require("../controllers/products");
 
 router.post(
-  "/add-product",
+  "/product",
   authenticated,
   partnerCheck,
   uploadFile("imageFile", "videoFile"),
@@ -91,18 +91,27 @@ router.patch(
   uploadFile("imageFile", "videoFile"),
   updateProduct
 );
-router.delete("/product/:id", authenticated, partnerCheck, deletProduct);
+router.delete("/product/:id", authenticated, partnerCheck, deleteProduct);
 router.get("/products/:id", getProductsByPartner);
 
 //-------------------------------TEST TRANSACTION START---------------------------------
 const {
   addTransaction,
-  getTransactionById,
+  getTransactionDetail,
   getCustomerTransactions,
   getPartnerTransactions,
+  updateTransaction,
+  deleteTransaction,
 } = require("../controllers/transactions");
-router.post("/transaction", authenticated, addTransaction);
-router.get("/transaction/:id", authenticated, getTransactionById);
+router.post("/transaction", authenticated, userCheck, addTransaction);
+router.get("/transaction/:id", authenticated, getTransactionDetail);
+router.delete("/transaction/:id", authenticated, deleteTransaction);
+router.patch(
+  "/transaction/:id",
+  authenticated,
+  partnerCheck,
+  updateTransaction
+);
 router.get(
   "/my-transaction",
   authenticated,

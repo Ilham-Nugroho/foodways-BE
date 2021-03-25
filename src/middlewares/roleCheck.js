@@ -12,14 +12,14 @@ exports.partnerCheck = async (req, res, next) => {
       next();
     } else {
       res.status(401).send({
-        status: "failed",
+        status: "ERROR",
         message: "You're not authorized",
       });
     }
   } catch (error) {
     res.status(500).send({
       status: "ERROR",
-      message: "User Authentication Error",
+      message: "Role Authentication Error",
     });
   }
 };
@@ -36,14 +36,14 @@ exports.userCheck = async (req, res, next) => {
       next();
     } else {
       res.status(401).send({
-        status: "failed",
+        status: "ERROR",
         message: "You're not authorized",
       });
     }
   } catch (error) {
     res.status(500).send({
       status: "ERROR",
-      message: "User Authentication Error",
+      message: "Role Authentication Error",
     });
   }
 };
