@@ -151,3 +151,26 @@ exports.login = async (req, res) => {
     });
   }
 };
+
+exports.checkAuthIntegrate = async (req, res) => {
+  try {
+    const profile = await Profile.findOne({
+      where: {
+        id: req.profileId.id,
+      },
+    });
+
+    res.send({
+      status: "Success",
+      message: "Valid user profile",
+      data: {
+        profile,
+      },
+    });
+  } catch (error) {
+    return res.status(401).send({
+      status: "ERROR",
+      message: "Check authentication error",
+    });
+  }
+};

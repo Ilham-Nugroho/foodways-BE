@@ -38,10 +38,15 @@ const { partnerCheck, userCheck } = require("../middlewares/roleCheck");
 
 //-----------------------------AUTH------------------------------------
 
-const { registerProfile, login } = require("../controllers/auth");
+const {
+  registerProfile,
+  login,
+  checkAuthIntegrate,
+} = require("../controllers/auth");
 
 router.post("/register", registerProfile);
 router.post("/login", login);
+router.get("/check-auth", authenticated, checkAuthIntegrate);
 
 //----------------------------------Profile--------------------------------------------
 const {
