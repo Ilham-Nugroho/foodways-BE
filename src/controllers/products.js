@@ -118,7 +118,7 @@ exports.addProduct = async (req, res) => {
 
     const schema = Joi.object({
       menuName: Joi.string().max(30).required(),
-      menuDesc: Joi.string().max(40).required(),
+      menuDesc: Joi.string().max(40),
       menuPrice: Joi.string()
         .pattern(/^[0-9]+$/, "numbers")
         .max(7)
@@ -141,7 +141,7 @@ exports.addProduct = async (req, res) => {
       });
     }
 
-    const createdProduct = await Products.create({
+    const productDatabase = await Products.create({
       menuName,
       menuDesc,
       menuPrice,
@@ -149,27 +149,37 @@ exports.addProduct = async (req, res) => {
       menuImg: req.files.imageFile[0].filename,
     });
 
-    const product = await Products.findOne({
-      where: {
-        id: createdProduct.id,
-      },
-      include: {
-        model: Profile,
-        as: "profile",
-        attributes: {
-          exclude: ["createdAt", "updatedAt", "password", "avatar", "location"],
-        },
-      },
-      attributes: {
-        exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
-      },
-    });
+    const productString = JSON.stringify(productDatabase);
+    const productObject = JSON.parse(productString);
+
+    const URL = "http://localhost:5000/uploads/";
+
+    const createdProduct = {
+      ...productObject,
+      menuImg: URL + productObject.menuImg,
+    };
+
+    // const product = await Products.findOne({
+    //   where: {
+    //     id: createdProduct.id,
+    //   },
+    //   include: {
+    //     model: Profile,
+    //     as: "profile",
+    //     attributes: {
+    //       exclude: ["createdAt", "updatedAt", "password", "avatar", "location"],
+    //     },
+    //   },
+    //   attributes: {
+    //     exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
+    //   },
+    // });
 
     res.send({
       status: "success",
       message: "ADD Product Successfull",
       data: {
-        product,
+        createdProduct,
       },
     });
   } catch (err) {
