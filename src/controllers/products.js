@@ -1,9 +1,10 @@
 const { Products, Profile } = require("../../models/");
 const Joi = require("joi");
+const URL = "http://localhost:5000/uploads/";
 
 exports.getProducts = async (req, res) => {
   try {
-    const products = await Products.findAll({
+    const productsDatabase = await Products.findAll({
       include: {
         model: Profile,
         as: "profile",
@@ -15,6 +16,14 @@ exports.getProducts = async (req, res) => {
         exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
       },
     });
+
+    const productString = JSON.stringify(productsDatabase);
+    const productObject = JSON.parse(productString);
+
+    const products = productObject.map((product) => ({
+      ...product,
+      menuImg: URL + product.menuImg,
+    }));
 
     res.send({
       status: "success",
@@ -118,7 +127,7 @@ exports.addProduct = async (req, res) => {
 
     const schema = Joi.object({
       menuName: Joi.string().max(30).required(),
-      menuDesc: Joi.string().max(40),
+      // menuDesc: Joi.string().max(40),
       menuPrice: Joi.string()
         .pattern(/^[0-9]+$/, "numbers")
         .max(7)
@@ -128,7 +137,7 @@ exports.addProduct = async (req, res) => {
     });
     const { error } = schema.validate({
       menuName,
-      menuDesc,
+      // menuDesc,
       menuPrice,
       ProfileId,
       menuImg,
@@ -143,37 +152,35 @@ exports.addProduct = async (req, res) => {
 
     const productDatabase = await Products.create({
       menuName,
-      menuDesc,
+      // menuDesc,
       menuPrice,
       ProfileId: req.profileId.id,
       menuImg: req.files.imageFile[0].filename,
     });
 
-    const productString = JSON.stringify(productDatabase);
-    const productObject = JSON.parse(productString);
+    const product = await Products.findOne({
+      where: {
+        id: productDatabase.id,
+      },
+      include: {
+        model: Profile,
+        as: "profile",
+        attributes: {
+          exclude: ["createdAt", "updatedAt", "password", "avatar", "location"],
+        },
+      },
+      attributes: {
+        exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
+      },
+    });
 
-    const URL = "http://localhost:5000/uploads/";
+    const productString = JSON.stringify(product);
+    const productObject = JSON.parse(productString);
 
     const createdProduct = {
       ...productObject,
       menuImg: URL + productObject.menuImg,
     };
-
-    // const product = await Products.findOne({
-    //   where: {
-    //     id: createdProduct.id,
-    //   },
-    //   include: {
-    //     model: Profile,
-    //     as: "profile",
-    //     attributes: {
-    //       exclude: ["createdAt", "updatedAt", "password", "avatar", "location"],
-    //     },
-    //   },
-    //   attributes: {
-    //     exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
-    //   },
-    // });
 
     res.send({
       status: "success",
