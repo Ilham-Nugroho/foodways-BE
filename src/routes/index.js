@@ -59,7 +59,7 @@ const {
 } = require("../controllers/profile");
 
 router.get("/profiles", getProfiles);
-router.get("/profile/:id", authenticated, getDetailProfile);
+router.get("/profile/:id", getDetailProfile);
 router.patch(
   "/profile/:id",
   authenticated,

@@ -1,6 +1,8 @@
 const { Profile, Products } = require("../../models/");
 const Joi = require("joi");
 
+const URL = "http://localhost:5000/uploads/";
+
 exports.getProfiles = async (req, res) => {
   try {
     const profiles = await Profile.findAll({
@@ -27,7 +29,7 @@ exports.getProfiles = async (req, res) => {
 
 exports.getProfilePartner = async (req, res) => {
   try {
-    const profiles = await Profile.findAll({
+    const findProfiles = await Profile.findAll({
       where: {
         role: "PARTNER",
       },
@@ -44,6 +46,14 @@ exports.getProfilePartner = async (req, res) => {
         exclude: ["createdAt", "updatedAt"],
       },
     });
+
+    const profileString = JSON.stringify(findProfiles);
+    const profileObject = JSON.parse(profileString);
+
+    const profiles = profileObject.map((profile) => ({
+      ...profile,
+      avatar: URL + profile.avatar,
+    }));
 
     res.send({
       status: "success",
@@ -92,11 +102,19 @@ exports.getDetailProfile = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const profile = await Profile.findOne({
+    const findProfile = await Profile.findOne({
       where: {
         id,
       },
     });
+
+    const profileString = JSON.stringify(findProfile);
+    const profileObject = JSON.parse(profileString);
+
+    const profile = {
+      ...profileObject,
+      avatar: URL + profileObject.avatar,
+    };
 
     res.send({
       status: "success",
@@ -160,15 +178,23 @@ exports.updateProfile = async (req, res) => {
         id: id,
       },
       attributes: {
-        exclude: ["createdAt", "updatedAt", "location", "password"],
+        exclude: ["createdAt", "updatedAt", "password"],
       },
     });
+
+    const profileString = JSON.stringify(profileNew);
+    const profileObject = JSON.parse(profileString);
+
+    const profile = {
+      ...profileObject,
+      avatar: URL + profileObject.avatar,
+    };
 
     res.send({
       status: "success",
       message: "UPDATE Profile Successfull",
       data: {
-        profileNew,
+        profile,
       },
     });
   } catch (err) {
