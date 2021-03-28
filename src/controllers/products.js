@@ -43,36 +43,38 @@ exports.getProducts = async (req, res) => {
 
 exports.getProductsByPartner = async (req, res) => {
   try {
-    const { id } = req.params;
-    const profile = await Profile.findOne({
+    //------------------------------------------------------------------------------
+
+    const findProducts = await Products.findAll({
       where: {
-        id,
-        role: "PARTNER",
+        profileId: req.params.id,
       },
       include: {
-        model: Products,
-        as: "products",
+        model: Profile,
+        as: "profile",
         attributes: {
-          exclude: ["createdAt", "updatedAt", "profileId", "ProfileId"],
+          exclude: ["createdAt", "updatedAt"],
         },
       },
+
       attributes: {
-        exclude: [
-          "createdAt",
-          "updatedAt",
-          "profileId",
-          "ProfileId",
-          "password",
-          "avatar",
-        ],
+        exclude: ["createdAt", "updatedAt"],
       },
     });
+
+    const profileString = JSON.stringify(findProducts);
+    const productObject = JSON.parse(profileString);
+
+    const products = productObject.map((product) => ({
+      ...product,
+      menuImg: URL + product.menuImg,
+    }));
 
     res.send({
       status: "success",
       message: "GET ALL Products By Partner Successfull",
       data: {
-        profile,
+        products,
       },
     });
   } catch (err) {
@@ -88,7 +90,7 @@ exports.getProductById = async (req, res) => {
   try {
     const { id } = req.params;
 
-    const products = await Products.findOne({
+    const product = await Products.findOne({
       where: {
         id,
       },
@@ -108,7 +110,7 @@ exports.getProductById = async (req, res) => {
       status: "success",
       message: "GET DETAIL Product Successfull",
       data: {
-        products,
+        product,
       },
     });
   } catch (err) {
